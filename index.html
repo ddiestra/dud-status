@@ -516,7 +516,9 @@ h1,h2,h3,.display{font-family:'Poppins',system-ui,sans-serif;}
 
           <g id="dep-internacional" class="deps" fill="none" stroke="#9169FF" stroke-width="1.7" marker-end="url(#ar-lilac)">
             <path d="M452,372 C 560,250 650,120 732,60"/>
-            <path d="M452,406 C 560,408 650,410 732,406"/>
+            <path d="M452,400 C 560,404 650,406 732,406"/>
+            <path d="M430,424 C 545,470 600,486 732,493"/>
+            <path d="M445,424 C 545,512 600,560 732,580"/>
           </g>
 
           <!-- API depende de Datos Docente · Sistema de Aprobaciones · Internacional -->
@@ -705,7 +707,7 @@ h1,h2,h3,.display{font-family:'Poppins',system-ui,sans-serif;}
   var deps = {
     'Datos Docente':['Banner','BUK','Empresarial RH','Notificaciones','API de Correo','Authentication','Authorization (Roles)'],
     'Sistema de Aprobaciones':['Authentication','Authorization (Roles)','API de Correo'],
-    'Internacional':['Banner','API de Correo'],
+    'Internacional':['Banner','API de Correo','Authentication','Authorization (Roles)'],
     'API':['Datos Docente','Sistema de Aprobaciones','Internacional']
   };
   function buildReport(){
