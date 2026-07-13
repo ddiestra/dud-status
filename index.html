@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Status Semanal · Directorio Único de Docentes (DUD) · Universidad Continental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Archivo+Narrow:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  /* ── Brand Book Universidad Continental 2025 ── */
+  --uc-white:#FFFFFF;
+  --uc-black:#000000;
+  --uc-purple:#5A00AA;   /* primario / acciones / texto acento */
+  --uc-lilac:#9169FF;    /* hover / estados / degradados */
+  --uc-sky:#B9E1FF;      /* fondo / acento decorativo (no texto) */
+  --uc-pink:#FAAAFA;     /* fondo / acento decorativo (no texto) */
+
+  /* superficies claras */
+  --paper:#F4F4F6;
+  --card:#FFFFFF;
+  --ink:#1A1A1A;
+  --ink-soft:#6B6B6B;
+  --line:#E0E0E5;
+
+  /* fondo morado (slides oscuros) */
+  --purple-900:#2A004F;
+  --purple-800:#3D0072;
+  --purple-700:#5A00AA;
+  --line-on-purple:rgba(255,255,255,.16);
+
+  /* estados del workflow (funcionales, fuera de paleta) */
+  --st-done:#2E7D32;
+  --st-progress:#9169FF;
+  --st-next:#5A00AA;
+  --st-risk:#C62828;
+  --st-hold:#B26A00;
+
+  --radius:12px;
+  --shadow: 0 20px 45px -22px rgba(42,0,79,.35);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;padding:0;}
+body{
+  font-family:'Poppins',system-ui,-apple-system,sans-serif;
+  background:var(--purple-900);
+  color:var(--ink);
+  overflow:hidden;
+}
+h1,h2,h3,.display{font-family:'Poppins',system-ui,sans-serif;}
+.narrow{font-family:'Archivo Narrow','Poppins',sans-serif;}
+
+/* ===== deck shell ===== */
+.deck{position:relative; width:100vw; height:100vh;}
+.slide{
+  position:absolute; inset:0; display:none;
+  padding:64px 88px; flex-direction:column; overflow:hidden;
+}
+.slide.active{display:flex;}
+.slide.light{background:var(--paper); color:var(--ink);}
+.slide.purple{
+  background:radial-gradient(120% 140% at 80% 12%, var(--uc-lilac) 0%, var(--purple-800) 42%, var(--purple-900) 100%);
+  color:#fff;
+}
+
+/* modular color blocks decoration (brandbook grid) */
+.blocks{position:absolute; inset:0; opacity:.55; pointer-events:none; overflow:hidden;}
+.blocks span{position:absolute; border-radius:10px;}
+
+/* ===== header bar ===== */
+.topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex:0 0 auto;}
+.brandmark{display:flex; align-items:center; gap:10px; font-weight:700; font-size:14px; letter-spacing:.02em; color:var(--uc-purple);}
+.brandmark .dot{width:9px;height:9px;border-radius:50%;background:var(--uc-purple);}
+.slide.purple .brandmark{color:#fff;}
+.crumb{font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); font-weight:600;}
+.slide.purple .crumb{color:rgba(255,255,255,.6);}
+
+.eyebrow{
+  font-size:12.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--uc-purple); margin-bottom:10px; display:flex; align-items:center; gap:8px;
+}
+.eyebrow::before{content:""; width:22px; height:2px; background:var(--uc-purple); display:inline-block;}
+.slide.purple .eyebrow{color:var(--uc-sky);}
+.slide.purple .eyebrow::before{background:var(--uc-sky);}
+.slide-title{font-size:32px; font-weight:700; line-height:1.15; margin:0 0 6px 0; color:var(--uc-purple);}
+.slide.purple .slide-title{color:#fff;}
+.slide-sub{font-size:15px; color:var(--ink-soft); max-width:780px; line-height:1.55; margin:0 0 26px 0;}
+.slide.purple .slide-sub{color:rgba(255,255,255,.72);}
+
+.body{flex:1 1 auto; min-height:0; display:flex; flex-direction:column;}
+
+/* ===== title slide ===== */
+.title-slide{justify-content:center; align-items:flex-start;}
+.title-kicker{font-family:'Archivo Narrow'; font-weight:700; font-size:14px; letter-spacing:.24em; text-transform:uppercase; color:var(--uc-sky); margin-bottom:18px;}
+.title-main{font-size:62px; font-weight:800; line-height:1.04; color:#fff; max-width:920px;}
+.title-main .accent{color:var(--uc-sky);}
+.title-tag{font-size:17px; color:#EAD9FF; margin-top:22px; border-left:3px solid var(--uc-sky); padding-left:14px; font-weight:500;}
+.title-foot{position:absolute; bottom:56px; left:88px; right:88px; display:flex; justify-content:space-between; align-items:flex-end;}
+.title-foot .who{font-size:13px; color:rgba(255,255,255,.6);}
+.title-foot .logo-strip{display:flex; align-items:center; gap:10px; font-weight:700; font-size:13px; color:rgba(255,255,255,.85); letter-spacing:.03em;}
+
+/* ===== week pill ===== */
+.week-pill{
+  display:inline-flex; align-items:center; gap:10px; margin-top:26px;
+  background:rgba(255,255,255,.1); border:1px solid var(--line-on-purple);
+  border-radius:100px; padding:9px 18px; font-weight:600; font-size:14px; color:#fff;
+}
+.week-pill b{color:var(--uc-sky); font-family:'Archivo Narrow'; letter-spacing:.05em;}
+
+/* ===== title team ===== */
+.title-team{display:flex; gap:52px; margin-top:36px; flex-wrap:wrap;}
+.tt-group{display:flex; flex-direction:column; gap:12px;}
+.tt-label{font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--uc-sky);}
+.tt-people{display:flex; gap:22px; flex-wrap:wrap;}
+.tt-person{display:flex; align-items:center; gap:11px;}
+.tt-avatar{
+  width:38px; height:38px; border-radius:50%; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px;
+  background:#fff; color:var(--uc-purple); box-shadow:0 6px 16px -8px rgba(42,0,79,.6);
+}
+.tt-group.uc .tt-avatar{background:var(--uc-sky); color:var(--purple-800);}
+.tt-person .pn{font-size:13.5px; font-weight:600; color:#fff; line-height:1.2;}
+.tt-person .pr{font-size:11px; color:rgba(255,255,255,.65); line-height:1.3;}
+
+/* ===== status columns (kanban-style) ===== */
+.status-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; flex:1; min-height:0;}
+.status-col{
+  background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+  display:flex; flex-direction:column; min-height:0; box-shadow:var(--shadow); overflow:hidden;
+}
+.status-col .col-head{
+  display:flex; align-items:center; gap:9px; padding:13px 16px; border-bottom:1px solid var(--line);
+  font-weight:700; font-size:13px; color:var(--ink);
+}
+.status-col .col-head .badge{
+  width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; color:#fff; flex:0 0 auto;
+}
+.status-col .col-head .count{margin-left:auto; font-size:11px; font-weight:600; color:var(--ink-soft);}
+.col-done   .badge{background:var(--st-done);}
+.col-prog   .badge{background:var(--st-progress);}
+.col-next   .badge{background:var(--st-next);}
+.col-risk   .badge{background:var(--st-risk);}
+.status-col .col-body{padding:12px 14px; display:flex; flex-direction:column; gap:9px; overflow:auto;}
+.tile{
+  border:1px solid var(--line); border-left-width:3px; border-radius:8px; padding:10px 12px;
+  font-size:12px; color:var(--ink-soft); line-height:1.45; background:#FCFBFE;
+}
+.tile b{display:block; color:var(--ink); font-size:12.5px; font-weight:600; margin-bottom:3px;}
+.col-done .tile{border-left-color:var(--st-done);}
+.col-prog .tile{border-left-color:var(--st-progress);}
+.col-next .tile{border-left-color:var(--st-next);}
+.col-risk .tile{border-left-color:var(--st-risk);}
+.tile .meta{display:inline-block; margin-top:6px; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:100px; background:#F0E9FA; color:var(--uc-purple);}
+.tile .meta.hold{background:#FCEFD9; color:var(--st-hold);}
+
+/* ===== kpi strip ===== */
+.kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px;}
+.kpi{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow);}
+.kpi .big{font-family:'Archivo Narrow'; font-weight:700; font-size:34px; color:var(--uc-purple); line-height:1;}
+.kpi .big .u{font-size:18px; color:var(--uc-lilac);}
+.kpi .lbl{font-size:11.5px; color:var(--ink-soft); margin-top:6px; line-height:1.4;}
+
+/* ===== hito progress bars ===== */
+.milestone-head{
+  display:flex; align-items:center; gap:16px; margin-bottom:20px;
+  background:#fff; border:1px solid var(--line); border-left:4px solid var(--uc-purple);
+  border-radius:var(--radius); padding:16px 20px; box-shadow:var(--shadow);
+}
+.milestone-head .mh-tag{font-family:'Archivo Narrow'; font-weight:700; font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--uc-purple); background:#F0E9FA; padding:5px 12px; border-radius:100px; flex:0 0 auto;}
+.milestone-head .mh-title{font-size:16px; font-weight:700; color:var(--ink);}
+.milestone-head .mh-title span{display:block; font-size:12px; font-weight:500; color:var(--ink-soft); margin-top:2px;}
+.milestone-head .mh-pct{margin-left:auto; font-family:'Archivo Narrow'; font-weight:700; font-size:38px; color:var(--uc-purple); line-height:1;}
+
+.prog-list{display:flex; flex-direction:column; gap:16px; flex:1; min-height:0; justify-content:center;}
+.prog-item{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:15px 18px; box-shadow:var(--shadow);}
+.prog-top{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px;}
+.prog-top .pt-name{font-size:14px; font-weight:600; color:var(--ink);}
+.prog-top .pt-name small{font-weight:500; color:var(--ink-soft); font-size:12px; margin-left:8px;}
+.prog-top .pt-weight{font-family:'Archivo Narrow'; font-weight:700; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--uc-purple); background:#F0E9FA; padding:3px 9px; border-radius:100px; margin-left:10px;}
+.prog-top .pt-val{font-family:'Archivo Narrow'; font-weight:700; font-size:16px; color:var(--uc-purple);}
+.prog-bar{height:9px; border-radius:100px; background:#EFEAF6; overflow:hidden;}
+.prog-fill{height:100%; border-radius:100px; background:linear-gradient(90deg,var(--uc-purple),var(--uc-lilac));}
+
+/* ===== gantt ===== */
+.gantt{flex:1; min-height:0; overflow:auto; background:#fff; border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);}
+.gantt table{width:100%; border-collapse:collapse; font-size:11.5px; table-layout:fixed;}
+.gantt th.rowlabel, .gantt td.rowlabel{width:210px; text-align:left; background:var(--purple-800); color:#fff; position:sticky; left:0; z-index:2; padding:9px 12px; font-weight:600; font-size:11px;}
+.gantt thead th{position:sticky; top:0; z-index:3;}
+.gantt thead th.rowlabel{z-index:4;}
+.gantt thead th.wk{background:var(--purple-700); color:#fff; font-family:'Archivo Narrow'; font-weight:600; font-size:11px; padding:8px 0; text-align:center; border-left:1px solid rgba(255,255,255,.1);}
+.gantt thead th.wk.now{background:var(--uc-lilac); color:#fff;}
+.gantt thead th.month{background:var(--purple-800); color:var(--uc-sky); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.08em; text-align:center; padding:7px 0; border-left:1px solid rgba(255,255,255,.12);}
+.gantt tbody td{border-top:1px solid var(--line); border-left:1px solid #EEECF4; height:40px; padding:0; position:relative;}
+.gantt tbody td.now{background:#F4EEFC;}
+.gantt tbody tr:nth-child(even) td:not(.rowlabel){background:#FAF8FD;}
+.gantt tbody tr:nth-child(even) td.now{background:#F0E7FB;}
+.gbar{position:absolute; top:10px; left:3px; right:3px; height:20px; border-radius:6px; display:flex; align-items:center; padding:0 8px; font-size:10px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; box-shadow:0 4px 10px -6px rgba(42,0,79,.5);}
+.gb-purple{background:var(--uc-purple);} .gb-lilac{background:var(--uc-lilac);}
+.gb-sky{background:var(--uc-sky); color:var(--purple-800);} .gb-pink{background:var(--uc-pink); color:var(--purple-800);}
+.gb-green{background:var(--st-done);} .gb-amber{background:var(--st-hold);} .gb-deep{background:var(--purple-900);}
+.gantt-legend{display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; font-size:11px; color:var(--ink-soft); align-items:center;}
+.gantt-legend .lg{display:flex; align-items:center; gap:6px;}
+.gantt-legend .sw{width:14px; height:10px; border-radius:3px; display:inline-block;}
+
+/* ===== footer ===== */
+.pagefoot{position:absolute; bottom:24px; left:88px; right:88px; display:flex; align-items:center; justify-content:space-between; font-size:11px; color:var(--ink-soft);}
+.slide.purple .pagefoot{color:rgba(255,255,255,.5);}
+.pagefoot .vend{display:flex; align-items:center; gap:6px;}
+
+/* ===== SEIDOR wordmark ===== */
+.seidor-mark{font-family:'Poppins',sans-serif; font-weight:700; letter-spacing:.05em; display:inline-flex; align-items:center;}
+.seidor-mark::after{content:""; width:.5em; height:.5em; border-radius:50%; margin-left:.3em; background:radial-gradient(circle at 32% 30%, var(--uc-pink) 0%, var(--uc-lilac) 55%, var(--uc-purple) 100%); box-shadow:0 0 .35em rgba(145,105,255,.55);}
+.brandmark .sep{color:#cbb8e0; font-weight:400; margin:0 2px;}
+.brandmark .seidor-mark{font-size:13px; color:var(--uc-purple);}
+.slide.purple .brandmark .seidor-mark{color:#fff;}
+.slide.purple .brandmark .sep{color:rgba(255,255,255,.3);}
+.pagefoot .vend .seidor-mark{font-size:12px; color:var(--ink-soft);}
+.slide.purple .pagefoot .vend .seidor-mark{color:rgba(255,255,255,.6);}
+
+/* ===== diagrama interactivo ===== */
+.deps{opacity:0; transition:opacity .2s ease;}
+.deps.on{opacity:1;}
+.modhit{fill:transparent; cursor:pointer;}
+.diagram-card{flex:1; min-height:0; display:flex; flex-direction:column; background:#fff; border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
+.diagram-bar{display:flex; align-items:center; gap:14px; padding:9px 14px; border-bottom:1px solid var(--line); background:#FBFAFE; flex:0 0 auto;}
+.dl-btn{display:inline-flex; align-items:center; gap:7px; font-family:'Poppins',sans-serif; font-size:12.5px; font-weight:600; color:#fff; background:var(--uc-purple); border:none; border-radius:100px; padding:8px 16px; cursor:pointer; transition:.15s; box-shadow:0 6px 16px -8px rgba(90,0,170,.6);}
+.dl-btn:hover{background:var(--uc-lilac);}
+.diagram-hint{font-size:11.5px; color:var(--ink-soft);}
+.diagram-canvas{flex:1; min-height:0; padding:6px 10px;}
+
+/* ===== modal ===== */
+.modal-overlay{position:fixed; inset:0; z-index:80; background:rgba(42,0,79,.45); backdrop-filter:blur(3px); display:none; align-items:center; justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-card{position:relative; width:min(460px,86vw); background:#fff; border-radius:16px; padding:28px 30px; box-shadow:0 40px 90px -30px rgba(42,0,79,.6); border-top:5px solid var(--uc-purple);}
+.modal-close{position:absolute; top:10px; right:14px; border:none; background:transparent; font-size:26px; line-height:1; color:var(--ink-soft); cursor:pointer;}
+.modal-status{display:inline-flex; align-items:center; gap:8px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:5px 11px; border-radius:100px; margin-bottom:14px;}
+.modal-status .d{width:9px; height:9px; border-radius:50%;}
+.modal-title{font-family:'Poppins'; font-size:20px; font-weight:700; color:var(--uc-purple); margin:0 0 8px 0;}
+.modal-body{font-size:14px; color:var(--ink); line-height:1.6; margin:0;}
+.modal-list{margin:0; padding-left:20px;}
+.modal-list li{margin-bottom:5px;}
+.modal-list li::marker{color:var(--uc-lilac);}
+
+/* ===== chrome (progress / controls) ===== */
+.chrome{position:fixed; left:0; right:0; bottom:0; z-index:50; pointer-events:none;}
+.progress-track{height:3px; width:100%; background:rgba(255,255,255,.12);}
+.progress-fill{height:100%; background:linear-gradient(90deg,var(--uc-purple),var(--uc-sky)); width:0%; transition:width .35s ease;}
+.controls{position:fixed; right:26px; top:22px; display:flex; align-items:center; gap:10px; pointer-events:all; z-index:60;}
+.ctrl-btn{
+  width:38px; height:38px; border-radius:50%; border:1px solid rgba(255,255,255,.24);
+  background:rgba(42,0,79,.82); color:#fff; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; backdrop-filter:blur(6px); font-size:16px; transition:.15s; box-shadow:0 6px 16px -8px rgba(42,0,79,.6);
+}
+.ctrl-btn:hover{background:var(--uc-purple);}
+.slide-counter{
+  font-family:'Archivo Narrow'; font-size:13px; letter-spacing:.05em; color:#fff;
+  background:rgba(42,0,79,.82); border:1px solid rgba(255,255,255,.24); border-radius:100px;
+  padding:8px 14px; backdrop-filter:blur(6px); pointer-events:all; box-shadow:0 6px 16px -8px rgba(42,0,79,.6);
+}
+.clickzone{position:fixed; top:0; bottom:60px; width:9%; z-index:40; cursor:pointer;}
+.clickzone.left{left:0;} .clickzone.right{right:0;}
+
+@media (max-width: 980px){
+  .slide{padding:36px 26px;}
+  .status-grid{grid-template-columns:1fr 1fr;}
+  .kpi-row{grid-template-columns:1fr 1fr;}
+  .title-main{font-size:38px;}
+}
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- SLIDE 1 : TITLE -->
+  <section class="slide purple active title-slide">
+    <div class="blocks">
+      <span style="width:180px;height:180px;background:var(--uc-lilac);opacity:.35;top:-40px;right:120px;"></span>
+      <span style="width:110px;height:110px;background:var(--uc-sky);opacity:.4;top:120px;right:60px;"></span>
+      <span style="width:70px;height:70px;background:var(--uc-pink);opacity:.5;top:250px;right:200px;"></span>
+      <span style="width:140px;height:60px;background:var(--uc-sky);opacity:.25;bottom:120px;right:90px;"></span>
+    </div>
+    <div class="title-kicker">Reporte de avance · DUD</div>
+    <div class="title-main">Status <span class="accent">Semanal</span><br>del proyecto</div>
+    <div class="title-tag">Directorio Único de Docentes — Universidad Continental</div>
+    <div class="week-pill">Semana <b>01</b> · <span>6 – 10 jul 2026</span></div>
+    <div class="title-team">
+      <div class="tt-group">
+        <span class="tt-label">Equipo SEIDOR</span>
+        <div class="tt-people">
+          <div class="tt-person"><span class="tt-avatar">GU</span><div><div class="pn">Giancarlo Uceda</div><div class="pr">Gestor de Proyecto · Scrum Master</div></div></div>
+          <div class="tt-person"><span class="tt-avatar">DD</span><div><div class="pn">Diego Diestra</div><div class="pr">Arquitecto Cloud · Tech Lead</div></div></div>
+          <div class="tt-person"><span class="tt-avatar">ET</span><div><div class="pn">Ernesto Tarrillo</div><div class="pr">Fullstack · UX/UI · QA</div></div></div>
+        </div>
+      </div>
+      <div class="tt-group uc">
+        <span class="tt-label">Universidad Continental</span>
+        <div class="tt-people">
+          <div class="tt-person"><span class="tt-avatar">EM</span><div><div class="pn">Eliana Mory Arciniega</div><div class="pr">Directora DNGD · Sponsor</div></div></div>
+          <div class="tt-person"><span class="tt-avatar">VD</span><div><div class="pn">Valeria Díaz Sabogal</div><div class="pr">Product Owner · DNGD</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="title-foot">
+      <div class="who">Universidad Continental — Dirección Nacional de Gestión Docente</div>
+      <div class="logo-strip">Implementación por&nbsp; <span class="seidor-mark" style="font-size:20px;">SEID<span>O</span>R</span></div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2 : STATUS SEMANA 1 -->
+  <section class="slide light">
+    <div class="topbar"><div class="brandmark"><span class="dot"></span>DUD · Universidad Continental<span class="sep">|</span><span class="seidor-mark">SEID<span>O</span>R</span></div><div class="crumb">Semana 01 · 6–10 jul</div></div>
+    <div class="eyebrow">Status semanal · Semana 1</div>
+    <h1 class="slide-title">Actividades de la semana</h1>
+    <div class="body">
+      <div class="status-grid" style="grid-template-columns:repeat(2,1fr);">
+        <div class="status-col col-prog">
+          <div class="col-head"><span class="badge">◐</span>Sesiones de Relevamiento<span class="count">3</span></div>
+          <div class="col-body">
+            <div class="tile"><b>Sesión funcional 1</b></div>
+            <div class="tile"><b>Sesión de integración · Banner</b></div>
+            <div class="tile"><b>Sesión funcional · Módulo de Internacionalización</b></div>
+          </div>
+        </div>
+        <div class="status-col col-done">
+          <div class="col-head"><span class="badge">✓</span>Avances<span class="count">2</span></div>
+          <div class="col-body">
+            <div class="tile"><b>Avances en diseño de arquitectura técnica</b></div>
+            <div class="tile"><b>Avances en infraestructura / documentación técnica</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pagefoot"><span>Directorio Único de Docentes · Status Semanal</span><span class="vend"><span class="seidor-mark">SEID<span>O</span>R</span></span></div>
+  </section>
+
+  <!-- SLIDE 3 : AVANCE DEL HITO 1 -->
+  <section class="slide light">
+    <div class="topbar"><div class="brandmark"><span class="dot"></span>DUD · Universidad Continental<span class="sep">|</span><span class="seidor-mark">SEID<span>O</span>R</span></div><div class="crumb">Semana 01 · 6–10 jul</div></div>
+    <div class="eyebrow">Avance de hito</div>
+    <h1 class="slide-title">Hito 1 · Planificación y Diseño</h1>
+    <div class="body">
+      <div class="milestone-head">
+        <span class="mh-tag">Hito 1</span>
+        <div class="mh-title">Planificación y Diseño<span>Semanas 1–3 · arquitectura, diccionario de datos y mockups UI/UX</span></div>
+        <div class="mh-pct">30%</div>
+      </div>
+      <div class="prog-list">
+        <div class="prog-item">
+          <div class="prog-top"><span class="pt-name">Arquitectura técnica y funcional <span class="pt-weight">Peso 80%</span></span><span class="pt-val">20%</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:20%;"></div></div>
+        </div>
+        <div class="prog-item">
+          <div class="prog-top"><span class="pt-name">Mockups UI/UX <span class="pt-weight">Peso 20%</span></span><span class="pt-val">70%</span></div>
+          <div class="prog-bar"><div class="prog-fill" style="width:70%;"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pagefoot"><span>Directorio Único de Docentes · Status Semanal</span><span class="vend"><span class="seidor-mark">SEID<span>O</span>R</span></span></div>
+  </section>
+
+  <!-- SLIDE 4 : CRONOGRAMA GENERAL -->
+  <section class="slide light">
+    <div class="topbar"><div class="brandmark"><span class="dot"></span>DUD · Universidad Continental<span class="sep">|</span><span class="seidor-mark">SEID<span>O</span>R</span></div><div class="crumb">Cronograma</div></div>
+    <div class="eyebrow">Plan de trabajo · dónde estamos</div>
+    <h1 class="slide-title">Cronograma general — 12 semanas</h1>
+    <div class="gantt">
+      <table>
+        <colgroup><col style="width:210px;"><col span="12"></colgroup>
+        <thead>
+          <tr><th class="rowlabel" rowspan="2">Actividad / Célula</th><th class="month" colspan="4">Mes 1 · Julio</th><th class="month" colspan="4">Mes 2 · Agosto</th><th class="month" colspan="4">Mes 3 · Septiembre</th></tr>
+          <tr><th class="wk now">S1</th><th class="wk">S2</th><th class="wk">S3</th><th class="wk">S4</th><th class="wk">S5</th><th class="wk">S6</th><th class="wk">S7</th><th class="wk">S8</th><th class="wk">S9</th><th class="wk">S10</th><th class="wk">S11</th><th class="wk">S12</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="rowlabel">Hito 1 · Planificación y diseño</td>
+            <td colspan="3"><div class="gbar gb-purple">Arquitectura técnica y funcional · Mockups UI/UX</div></td>
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td class="rowlabel">DUD · web component</td>
+            <td class="now"></td><td></td>
+            <td colspan="6"><div class="gbar gb-lilac">Portal docente · BackOffice · Buscador 360°</div></td>
+            <td></td><td></td><td></td><td></td></tr>
+          <tr><td class="rowlabel">Hito 2 · Integración bidireccional</td>
+            <td class="now"></td><td></td><td></td><td></td>
+            <td colspan="4"><div class="gbar gb-green">Banner · Buk · Empresarial RH · SSO</div></td>
+            <td></td><td></td><td></td><td></td></tr>
+          <tr><td class="rowlabel">Hito 3 · ETL / Migración</td>
+            <td class="now"></td><td></td><td></td><td></td><td></td>
+            <td colspan="4"><div class="gbar gb-pink">ETL histórico → Maestros SUNEDU</div></td>
+            <td></td><td></td><td></td></tr>
+          <tr><td class="rowlabel">Hito 4 · Pruebas y certificación</td>
+            <td class="now"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            <td colspan="3"><div class="gbar gb-amber">QA · Carga/estrés · UAT</div></td>
+            <td></td></tr>
+          <tr><td class="rowlabel">Hito 5 · Go-Live y capacitación</td>
+            <td class="now"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            <td colspan="2"><div class="gbar gb-deep">Producción · Docs · Cierre</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="gantt-legend">
+      <span class="lg"><span class="sw" style="background:var(--uc-purple);"></span>Hito 1</span>
+      <span class="lg"><span class="sw" style="background:var(--uc-lilac);"></span>DUD web component</span>
+      <span class="lg"><span class="sw" style="background:var(--st-done);"></span>Hito 2</span>
+      <span class="lg"><span class="sw" style="background:var(--uc-pink);"></span>Hito 3</span>
+      <span class="lg"><span class="sw" style="background:var(--st-hold);"></span>Hito 4</span>
+      <span class="lg"><span class="sw" style="background:var(--purple-900);"></span>Hito 5</span>
+      <span class="lg" style="margin-left:auto; font-style:italic;">Columna resaltada = semana actual (S1).</span>
+    </div>
+    <div class="pagefoot"><span>Directorio Único de Docentes · Status Semanal</span><span class="vend"><span class="seidor-mark">SEID<span>O</span>R</span></span></div>
+  </section>
+
+  <!-- SLIDE 5 : DIAGRAMA DE MODULOS, DEPENDENCIAS Y ESTATUS -->
+  <section class="slide light">
+    <div class="topbar"><div class="brandmark"><span class="dot"></span>DUD · Universidad Continental<span class="sep">|</span><span class="seidor-mark">SEID<span>O</span>R</span></div><div class="crumb">Arquitectura</div></div>
+    <div class="eyebrow">Arquitectura de la solución</div>
+    <h1 class="slide-title">Diagrama de módulos, dependencias y estatus</h1>
+    <div class="body">
+      <div class="diagram-card">
+        <div class="diagram-bar">
+          <button class="dl-btn" id="dlPendientes" title="Descargar el detalle completo de pendientes y dependencias"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>Descargar pendientes</button>
+        </div>
+        <div class="diagram-canvas">
+        <svg viewBox="0 0 1000 640" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" font-family="Poppins, sans-serif">
+          <defs>
+            <marker id="ar-purple" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#5A00AA"/></marker>
+            <marker id="ar-lilac" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#9169FF"/></marker>
+            <marker id="ar-amber" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#B26A00"/></marker>
+            <marker id="ar-teal" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,4 L0,8 Z" fill="#17A398"/></marker>
+          </defs>
+
+          <!-- DUD container -->
+          <rect x="24" y="150" width="440" height="316" rx="16" fill="#FFFFFF" stroke="#5A00AA" stroke-width="1.6"/>
+          <text x="42" y="174" font-size="14" font-weight="700" fill="#5A00AA">DUD</text>
+          <circle cx="82" cy="169" r="5.5" fill="#C62828"/>
+
+          <!-- Infraestructura sub-container -->
+          <rect x="48" y="188" width="392" height="150" rx="12" fill="#FBFAFE" stroke="#C9B6E4" stroke-width="1.2"/>
+          <text x="64" y="208" font-size="12.5" font-weight="700" fill="#6B6B6B">Infraestructura</text>
+          <circle cx="424" cy="204" r="5.5" fill="#2563EB"/>
+
+          <!-- infra: Web / API -->
+          <g font-size="13" font-weight="600" fill="#1A1A1A" text-anchor="middle">
+            <rect x="70"  y="220" width="92" height="50" rx="8" fill="#fff" stroke="#E0E0E5"/>
+            <circle cx="150" cy="231" r="5" fill="#E0A400"/>
+            <text x="116" y="249">Web</text>
+
+            <rect x="190" y="220" width="92" height="50" rx="8" fill="#fff" stroke="#E0E0E5"/>
+            <circle cx="270" cy="231" r="5" fill="#E0A400"/>
+            <text x="236" y="249">API</text>
+          </g>
+
+          <!-- infra: Azure services -->
+          <g font-size="11.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">
+            <rect x="70"  y="280" width="100" height="48" rx="8" fill="#fff" stroke="#E0E0E5"/>
+            <text x="120" y="300">Azure</text><text x="120" y="315">Database</text>
+
+            <rect x="182" y="280" width="100" height="48" rx="8" fill="#fff" stroke="#E0E0E5"/>
+            <text x="232" y="300">Azure Blob</text><text x="232" y="315">Storage</text>
+
+            <rect x="294" y="280" width="100" height="48" rx="8" fill="#fff" stroke="#E0E0E5"/>
+            <text x="344" y="300">Azure</text><text x="344" y="315">Key Vault</text>
+          </g>
+
+          <!-- DUD modules -->
+          <g font-size="12.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">
+            <rect x="48"  y="360" width="118" height="64" rx="10" fill="#fff" stroke="#E0E0E5"/>
+            <circle cx="154" cy="374" r="5" fill="#C62828"/>
+            <text x="107" y="388">Datos</text><text x="107" y="404">Docente</text>
+
+            <rect x="180" y="360" width="140" height="64" rx="10" fill="#fff" stroke="#E0E0E5"/>
+            <circle cx="308" cy="374" r="5" fill="#C62828"/>
+            <text x="250" y="388">Sistema de</text><text x="250" y="404">Aprobaciones</text>
+
+            <rect x="334" y="360" width="118" height="64" rx="10" fill="#fff" stroke="#E0E0E5"/>
+            <circle cx="440" cy="374" r="5" fill="#C62828"/>
+            <text x="393" y="396">Internacional</text>
+          </g>
+
+          <!-- external systems -->
+          <g font-size="12.5" font-weight="600" fill="#3D0072" text-anchor="middle">
+            <rect x="732" y="28"  width="216" height="60" rx="10" fill="#F0E9FA" stroke="#9169FF" stroke-width="1.3"/>
+            <text x="840" y="63">Banner</text><circle cx="930" cy="46" r="5.5" fill="#C62828"/>
+            <rect x="732" y="115" width="216" height="60" rx="10" fill="#F0E9FA" stroke="#9169FF" stroke-width="1.3"/>
+            <text x="840" y="150">BUK</text><circle cx="930" cy="133" r="5.5" fill="#E0A400"/>
+            <rect x="732" y="202" width="216" height="60" rx="10" fill="#F0E9FA" stroke="#9169FF" stroke-width="1.3"/>
+            <text x="840" y="237">Empresarial RH</text><circle cx="930" cy="220" r="5.5" fill="#C62828"/>
+            <rect x="732" y="289" width="216" height="60" rx="10" fill="#F0E9FA" stroke="#9169FF" stroke-width="1.3"/>
+            <text x="840" y="324">Notificaciones</text><circle cx="930" cy="307" r="5.5" fill="#C62828"/>
+            <rect x="732" y="376" width="216" height="60" rx="10" fill="#F0E9FA" stroke="#9169FF" stroke-width="1.3"/>
+            <text x="840" y="411">API de Correo</text><circle cx="930" cy="394" r="5.5" fill="#E0A400"/>
+            <rect x="732" y="463" width="216" height="60" rx="10" fill="#F0E9FA" stroke="#9169FF" stroke-width="1.3"/>
+            <text x="840" y="498">Authentication</text><circle cx="930" cy="481" r="5.5" fill="#2563EB"/>
+            <rect x="732" y="550" width="216" height="60" rx="10" fill="#F0E9FA" stroke="#9169FF" stroke-width="1.3"/>
+            <text x="840" y="585">Authorization (Roles)</text><circle cx="930" cy="568" r="5.5" fill="#C62828"/>
+          </g>
+
+          <!-- ===== dependency arrows (interactivas: aparecen al hacer clic en un módulo) ===== -->
+          <!-- Todas salen por debajo de los módulos y se abren en la zona vacía (no cruzan bloques) -->
+          <g id="dep-datos" class="deps" fill="none" stroke="#5A00AA" stroke-width="1.5" marker-end="url(#ar-purple)">
+            <path d="M64,424  C 230,470 470,120 732,58"/>
+            <path d="M78,424  C 250,472 470,200 732,145"/>
+            <path d="M92,424  C 270,474 470,278 732,232"/>
+            <path d="M106,424 C 290,476 470,348 732,319"/>
+            <path d="M120,424 C 310,480 470,420 732,406"/>
+            <path d="M134,424 C 340,488 470,492 732,493"/>
+            <path d="M148,424 C 390,502 470,566 732,580"/>
+          </g>
+
+          <g id="dep-sistema" class="deps" fill="none" stroke="#B26A00" stroke-width="1.7" marker-end="url(#ar-amber)">
+            <path d="M215,424 C 360,486 470,490 732,493"/>
+            <path d="M235,424 C 400,500 470,560 732,580"/>
+            <path d="M290,424 C 440,472 560,410 732,406"/>
+          </g>
+
+          <g id="dep-internacional" class="deps" fill="none" stroke="#9169FF" stroke-width="1.7" marker-end="url(#ar-lilac)">
+            <path d="M452,372 C 560,250 650,120 732,60"/>
+            <path d="M452,406 C 560,408 650,410 732,406"/>
+          </g>
+
+          <!-- API depende de Datos Docente · Sistema de Aprobaciones · Internacional -->
+          <g id="dep-api" class="deps" fill="none" stroke="#17A398" stroke-width="1.7" marker-end="url(#ar-teal)">
+            <path d="M205,270 C 176,308 176,336 120,358"/>
+            <path d="M240,270 C 286,306 284,338 256,358"/>
+            <path d="M262,270 C 412,302 404,338 390,358"/>
+          </g>
+
+          <!-- zonas de clic -->
+          <g>
+            <rect class="modhit" data-modal="dud" x="24" y="150" width="440" height="34" rx="14"/>
+            <rect class="modhit" data-modal="infra" x="48" y="188" width="392" height="30" rx="8"/>
+            <rect class="modhit" data-modal="web" x="70" y="220" width="92" height="50" rx="8"/>
+            <rect class="modhit" data-dep="api" x="190" y="220" width="92" height="50" rx="8"/>
+            <rect class="modhit" data-dep="datos" x="48" y="360" width="118" height="64" rx="10"/>
+            <rect class="modhit" data-dep="sistema" x="180" y="360" width="140" height="64" rx="10"/>
+            <rect class="modhit" data-dep="internacional" x="334" y="360" width="118" height="64" rx="10"/>
+            <rect class="modhit" data-modal="banner" x="732" y="28"  width="216" height="60" rx="10"/>
+            <rect class="modhit" data-modal="buk"    x="732" y="115" width="216" height="60" rx="10"/>
+            <rect class="modhit" data-modal="emprh"  x="732" y="202" width="216" height="60" rx="10"/>
+            <rect class="modhit" data-modal="notif"  x="732" y="289" width="216" height="60" rx="10"/>
+            <rect class="modhit" data-modal="correo" x="732" y="376" width="216" height="60" rx="10"/>
+            <rect class="modhit" data-modal="auth"   x="732" y="463" width="216" height="60" rx="10"/>
+            <rect class="modhit" data-modal="authz"  x="732" y="550" width="216" height="60" rx="10"/>
+          </g>
+        </svg>
+        </div>
+      </div>
+      <div class="gantt-legend" style="margin-top:10px;">
+        <b style="color:var(--ink); font-size:11.5px; margin-right:4px;">Estatus de dependencias:</b>
+        <span class="lg"><span class="sw" style="border-radius:50%; width:11px; height:11px; background:#C62828;"></span>Totalmente bloqueadas</span>
+        <span class="lg"><span class="sw" style="border-radius:50%; width:11px; height:11px; background:#E0A400;"></span>Aún pendientes</span>
+        <span class="lg"><span class="sw" style="border-radius:50%; width:11px; height:11px; background:#2563EB;"></span>Solo para pase a producción</span>
+        <span class="lg"><span class="sw" style="border-radius:50%; width:11px; height:11px; background:#2E7D32;"></span>Sin dependencias pendientes</span>
+        <span class="lg" style="margin-left:auto; font-style:italic;">Haz clic en un módulo (Datos Docente / Sistema de Aprobaciones / Internacional) para ver sus dependencias.</span>
+      </div>
+    </div>
+    <div class="pagefoot"><span>Directorio Único de Docentes · Status Semanal</span><span class="vend"><span class="seidor-mark">SEID<span>O</span>R</span></span></div>
+  </section>
+
+  <!-- SLIDE 6 : GRACIAS -->
+  <section class="slide purple title-slide" style="align-items:center; justify-content:center; text-align:center;">
+    <div class="blocks">
+      <span style="width:170px;height:170px;background:var(--uc-lilac);opacity:.32;top:-30px;left:80px;"></span>
+      <span style="width:100px;height:100px;background:var(--uc-sky);opacity:.4;bottom:120px;right:120px;"></span>
+      <span style="width:64px;height:64px;background:var(--uc-pink);opacity:.5;top:150px;right:220px;"></span>
+    </div>
+    <div class="title-kicker" style="letter-spacing:.3em;">DUD · Universidad Continental</div>
+    <div class="title-main" style="font-size:72px; text-align:center;">Gracias</div>
+    <div class="title-tag" style="border:none; padding:0; margin-top:14px; color:#EAD9FF;">Status Semana 1 · 6 – 10 jul 2026 — preguntas y siguientes pasos</div>
+    <div class="logo-strip" style="margin-top:34px; display:flex; align-items:center; gap:10px; font-weight:700; color:rgba(255,255,255,.85);">Implementación por&nbsp;<span class="seidor-mark" style="font-size:22px; color:#fff;">SEID<span>O</span>R</span></div>
+  </section>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card">
+    <button class="modal-close" id="modalClose" aria-label="Cerrar">×</button>
+    <span class="modal-status" id="modalStatus"><span class="d"></span><span class="t"></span></span>
+    <h3 class="modal-title" id="modalTitle"></h3>
+    <p class="modal-body" id="modalBody"></p>
+  </div>
+</div>
+
+<div class="chrome"><div class="progress-track"><div class="progress-fill" id="progressFill"></div></div></div>
+<div class="clickzone left" id="zoneLeft"></div>
+<div class="clickzone right" id="zoneRight"></div>
+<div class="controls">
+  <button class="ctrl-btn" id="btnPrev" title="Anterior (←)">‹</button>
+  <span class="slide-counter" id="counter">1 / 2</span>
+  <button class="ctrl-btn" id="btnNext" title="Siguiente (→)">›</button>
+  <button class="ctrl-btn" id="btnFull" title="Pantalla completa">⛶</button>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length;
+  var idx = 0;
+
+  function render(){
+    slides.forEach(function(s,i){ s.classList.toggle('active', i===idx); });
+    document.getElementById('counter').textContent = (idx+1) + ' / ' + total;
+    document.getElementById('progressFill').style.width = (((idx+1)/total)*100) + '%';
+  }
+  function go(n){ idx = Math.max(0, Math.min(total-1, n)); render(); }
+  function next(){ go(idx+1); }
+  function prev(){ go(idx-1); }
+
+  document.getElementById('btnNext').addEventListener('click', next);
+  document.getElementById('btnPrev').addEventListener('click', prev);
+  document.getElementById('zoneRight').addEventListener('click', next);
+  document.getElementById('zoneLeft').addEventListener('click', prev);
+  document.getElementById('btnFull').addEventListener('click', function(){
+    if(!document.fullscreenElement){ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+    else { document.exitFullscreen && document.exitFullscreen(); }
+  });
+
+  window.addEventListener('keydown', function(e){
+    if(['ArrowRight','PageDown',' '].indexOf(e.key)!==-1){ e.preventDefault(); next(); }
+    else if(['ArrowLeft','PageUp'].indexOf(e.key)!==-1){ e.preventDefault(); prev(); }
+    else if(e.key==='Home'){ go(0); }
+    else if(e.key==='End'){ go(total-1); }
+  });
+
+  var touchStartX = null;
+  window.addEventListener('touchstart', function(e){ touchStartX = e.touches[0].clientX; });
+  window.addEventListener('touchend', function(e){
+    if(touchStartX===null) return;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    if(dx < -50) next(); else if(dx > 50) prev();
+    touchStartX = null;
+  });
+
+  render();
+})();
+
+(function(){
+  var colors = {datos:'#5A00AA', sistema:'#B26A00', internacional:'#9169FF', api:'#17A398'};
+  function clearDeps(){
+    [].forEach.call(document.querySelectorAll('.deps'), function(g){ g.classList.remove('on'); });
+    [].forEach.call(document.querySelectorAll('.modhit'), function(h){ h.style.stroke='none'; });
+  }
+  [].forEach.call(document.querySelectorAll('[data-dep]'), function(h){
+    h.addEventListener('click', function(e){
+      e.stopPropagation();
+      var key = h.getAttribute('data-dep');
+      var g = document.getElementById('dep-'+key);
+      var wasOn = g.classList.contains('on');
+      clearDeps();
+      if(!wasOn){ g.classList.add('on'); h.style.stroke = colors[key]; h.style.strokeWidth = '2.5'; }
+    });
+  });
+
+  var content = {
+    dud:{status:'Totalmente bloqueadas', color:'#C62828', title:'DUD',
+      body:'Pendientes:', items:['Lineamiento de desarrollo API (C#)','Lineamiento de desarrollo web (Angular)']},
+    infra:{status:'Solo para pase a producción', color:'#2563EB', title:'Infraestructura',
+      body:'Pendiente: credenciales de acceso a la cuenta de Azure para aprovisionar y configurar la infraestructura (entornos DEV/QA/PRD, servicios PaaS, redes y Key Vault).'},
+    web:{status:'Aún pendiente', color:'#E0A400', title:'Web',
+      body:'Pendiente:', items:['Aprobación del diseño','Iconografía','Logotipos','Paleta de colores','Tipografías']},
+    banner:{status:'Totalmente bloqueadas', color:'#C62828', title:'Banner',
+      body:'Pendiente:', items:['Detalle de los campos a extraer','Revisión de la existencia de APIs','Accesos']},
+    buk:{status:'Aún pendiente', color:'#E0A400', title:'BUK',
+      body:'Pendiente:', items:['Detalle de campos','Accesos']},
+    emprh:{status:'Totalmente bloqueadas', color:'#C62828', title:'Empresarial RH',
+      body:'Pendiente:', items:['Documentación completa','Detalle de campos','Accesos']},
+    notif:{status:'Totalmente bloqueadas', color:'#C62828', title:'Notificaciones',
+      body:'Pendiente:', items:['Documentación','Acceso al código']},
+    correo:{status:'Aún pendiente', color:'#E0A400', title:'API de Correo',
+      body:'Pendiente:', items:['Documentación','Accesos']},
+    auth:{status:'Solo para pase a producción', color:'#2563EB', title:'Authentication',
+      body:'Pendiente:', items:['Datos de acceso a la aplicación de Google']},
+    authz:{status:'Totalmente bloqueadas', color:'#C62828', title:'Authorization (Roles)',
+      body:'Pendiente:', items:['Documentación','Accesos']}
+  };
+  var ov = document.getElementById('modalOverlay');
+  function openModal(k){
+    var c = content[k]; if(!c || !ov) return;
+    document.getElementById('modalTitle').textContent = c.title;
+    var html = c.body ? '<p style="margin:0 0 8px 0;">'+c.body+'</p>' : '';
+    if(c.items && c.items.length){
+      html += '<ul class="modal-list">' + c.items.map(function(it){ return '<li>'+it+'</li>'; }).join('') + '</ul>';
+    }
+    document.getElementById('modalBody').innerHTML = html;
+    var st = document.getElementById('modalStatus');
+    st.querySelector('.d').style.background = c.color;
+    st.querySelector('.t').textContent = c.status;
+    st.style.color = c.color;
+    st.style.background = c.color + '1A';
+    ov.classList.add('open');
+  }
+  function closeModal(){ if(ov) ov.classList.remove('open'); }
+  [].forEach.call(document.querySelectorAll('[data-modal]'), function(h){
+    h.addEventListener('click', function(e){ e.stopPropagation(); openModal(h.getAttribute('data-modal')); });
+  });
+  if(ov){
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    ov.addEventListener('click', function(e){ if(e.target===ov) closeModal(); });
+    window.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+  }
+
+  // ===== descarga del detalle completo =====
+  var order = ['dud','infra','web','banner','buk','emprh','notif','correo','auth','authz'];
+  var deps = {
+    'Datos Docente':['Banner','BUK','Empresarial RH','Notificaciones','API de Correo','Authentication','Authorization (Roles)'],
+    'Sistema de Aprobaciones':['Authentication','Authorization (Roles)','API de Correo'],
+    'Internacional':['Banner','API de Correo'],
+    'API':['Datos Docente','Sistema de Aprobaciones','Internacional']
+  };
+  function buildReport(){
+    var L = [];
+    L.push('DUD — Status Semanal · Semana 1 (6–10 jul 2026)');
+    L.push('Detalle completo de pendientes y dependencias');
+    L.push('==================================================');
+    L.push('');
+    L.push('## PENDIENTES POR COMPONENTE');
+    order.forEach(function(k){
+      var c = content[k]; if(!c) return;
+      L.push('');
+      L.push('• ' + c.title + '  [' + c.status + ']');
+      (c.items || []).forEach(function(it){ L.push('    - ' + it); });
+    });
+    L.push('');
+    return L.join('\n');
+  }
+  function downloadTxt(){
+    var blob = new Blob([buildReport()], {type:'text/plain;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'DUD-status-semana1-pendientes.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function downloadPdf(){
+    var JS = window.jspdf && window.jspdf.jsPDF;
+    if(!JS){ downloadTxt(); return; }
+    var doc = new JS({unit:'pt', format:'a4'});
+    var PURPLE=[90,0,170], INK=[26,26,26], GRAY=[107,107,107];
+    var st = {margin:48, y:60, pw:doc.internal.pageSize.getWidth(), ph:doc.internal.pageSize.getHeight()};
+    function add(text, size, style, color, indent){
+      doc.setFont('helvetica', style); doc.setFontSize(size);
+      doc.setTextColor(color[0], color[1], color[2]);
+      var lines = doc.splitTextToSize(text, st.pw - st.margin*2 - indent);
+      for(var i=0;i<lines.length;i++){
+        if(st.y > st.ph - st.margin){ doc.addPage(); st.y = st.margin; }
+        doc.text(lines[i], st.margin + indent, st.y);
+        st.y += size*1.4;
+      }
+    }
+    add('DUD - Status Semanal - Semana 1 (6-10 jul 2026)', 16, 'bold', PURPLE, 0);
+    add('Detalle completo de pendientes y dependencias', 10, 'normal', GRAY, 0);
+    st.y += 10;
+    add('PENDIENTES POR COMPONENTE', 12, 'bold', PURPLE, 0);
+    st.y += 2;
+    order.forEach(function(k){
+      var c = content[k]; if(!c) return;
+      st.y += 6;
+      add(c.title + '  (' + c.status + ')', 11, 'bold', INK, 0);
+      (c.items || []).forEach(function(it){ add('-  ' + it, 10, 'normal', INK, 16); });
+    });
+    doc.save('DUD-status-semana1-pendientes.pdf');
+  }
+  var dlBtn = document.getElementById('dlPendientes');
+  if(dlBtn){ dlBtn.addEventListener('click', downloadPdf); }
+})();
+</script>
+</body>
+</html>

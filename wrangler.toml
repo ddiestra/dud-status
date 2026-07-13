@@ -1,0 +1,7 @@
+name = 'dud-status'
+pages_build_output_dir = "."
+compatibility_date = "2026-06-01"
+
+[vars]
+BA_USER = "seidor"
+BA_PASS = "seidor2026"
